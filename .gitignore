@@ -1,0 +1,12 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Rendered videos (big; share them outside git)
+renders/
+*.mp4
+*.mov
+
+# macOS
+.DS_Store

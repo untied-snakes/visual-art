@@ -1,40 +1,32 @@
-"""
-HOW TO MAKE A NEW VISUAL
-  1. Copy this file:   cp _template.py my_thing.py
-  2. Rename the class: TemplateVisual -> MyThingVisual
-  3. Try it:           uv run visual-art play my_thing
-It's automatically included in shuffle.
-
-Audio values you can use in update():
-  audio.volume  audio.bass  audio.mids  audio.highs   roughly 0 (silent) to 1 (loud)
-  audio.spectrum   array of loudness per frequency, low -> high
-  audio.samples    the raw waveform, floats -1..1
-"""
+"""Rings rippling out from the centre, like sound across a canyon floor.
+The mids push the rings apart; the highs speed up the colour drift."""
 import pygame
 
+from visual_art import palette
 from visual_art.audio import AudioFrame
 from visual_art.visual import Visual
+
+RING_COLORS = [palette.OCHRE, palette.CLAY, palette.RUST, palette.MAUVE, palette.DUSK, palette.TURQUOISE, palette.SAND]
 
 
 class CirclesVisual(Visual):
     def __init__(self, width: int, height: int) -> None:
         super().__init__(width, height)
-        # Set up anything you need to remember between frames.
-        self.radius = 0.0
+        self.radius = 0.0  # the rings flow outward from here
         self.hue = 0.0
-        self.space = 0.0
-        self.color = pygame.Color(0)
+        self.space = 20.0
 
     def update(self, audio: AudioFrame, dt: float) -> None:
-        # React to the music. Multiply any movement by dt.
-        self.hue = (self.hue + dt * (20 + 200 * audio.highs)) % 360
-        self.space = 20 + audio.mids * 40
-
+        self.hue = (self.hue + dt * (0.02 + 0.15 * audio.highs)) % 1.0
+        target = 30 + audio.mids * 50
+        self.space += (target - self.space) * min(1.0, dt * 3)
+        self.radius = (self.radius + dt * (15 + 60 * audio.bass)) % self.space
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill((0, 0, 0))  # always clear first
+        surface.fill(palette.NIGHT)  # always clear first
         center = (self.width // 2, self.height // 2)
-        timer = pygame.time.get_ticks() / 1000.0
         for i in range(30):
-            self.color.hsva = ((timer * 30 + i * self.space) % 360, 80, 100, 100)
-            pygame.draw.circle(surface, self.color, center, int(self.radius + i * self.space), width=3)
+            color = palette.cycle(RING_COLORS, self.hue + i / 30)
+            # Rings fade into the dark as they spread out.
+            color = palette.mix(color, palette.NIGHT, i / 30)
+            pygame.draw.circle(surface, color, center, int(self.radius + i * self.space), width=3)

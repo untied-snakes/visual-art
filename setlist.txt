@@ -1,0 +1,15 @@
+# The set for Oct 23 at Pidgin Palace. One song per line, in order:
+# the visual's name, then the song title (the title is just for you; it shows in the terminal).
+# Reorder lines to match the set. A visual can be used more than once.
+# See every visual name with: uv run visual-art list
+
+dunes      Song 1
+pulse      Song 2
+dust       Song 3
+canyon     Song 4
+serpent    Song 5
+scales     Song 6
+ridgeline  Song 7
+vision     Song 8
+circles    Song 9
+cosmos     Song 10

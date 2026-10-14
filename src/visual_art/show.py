@@ -3,6 +3,7 @@ import pygame
 
 from visual_art.audio import AudioFrame
 from visual_art.crossfade import Crossfade
+from visual_art.setlist import Setlist
 from visual_art.shuffle import Shuffle
 from visual_art.visual import Visual
 
@@ -17,14 +18,17 @@ class Show:
         seconds: float | None = None,
         fade: float = 4.0,
         seed=None,
+        setlist: Setlist | None = None,
     ) -> None:
         self.visuals = visuals
         self.width = width
         self.height = height
         self.seconds = seconds
         self.fade_seconds = fade
-        self.shuffle = Shuffle(names, seed)
-        self.current = self._make(self.shuffle.next())
+        # A setlist plays in order and only moves when told; otherwise shuffle.
+        self.setlist = setlist
+        self.order = setlist if setlist is not None else Shuffle(names, seed)
+        self.current = self._make(self.order.next())
         self.fade: Crossfade | None = None
         self.time_on_screen = 0.0
         # Off-screen surfaces the crossfade draws each visual onto.
@@ -40,6 +44,7 @@ class Show:
             self.fade.update(audio, dt)
             self.fade.draw(surface, self.old_surface, self.new_surface)
             if self.fade.done:
+                self.fade.old.close()
                 self.current = self.fade.new
                 self.fade = None
         else:
@@ -48,9 +53,25 @@ class Show:
 
     def skip(self) -> None:
         """Start a fade to the next visual now."""
-        if self.fade is not None or len(self.shuffle.names) < 2:
-            return
-        self.fade = Crossfade(self.current, self._make(self.shuffle.next()), self.fade_seconds)
+        if len(self.order.names) > 1:
+            self._fade_to(self.order.next())
+
+    def back(self) -> None:
+        """Fade back to the previous song's visual. Setlist only."""
+        if self.setlist is not None and len(self.setlist.names) > 1:
+            self._fade_to(self.setlist.previous())
+
+    def jump(self, index: int) -> None:
+        """Fade to song number index (0 = first). Setlist only."""
+        if self.setlist is not None and index < len(self.setlist.names):
+            self._fade_to(self.setlist.go_to(index))
+
+    def _fade_to(self, name: str) -> None:
+        if self.fade is not None:
+            # Pressed again mid-fade: finish that fade at once and start the new one.
+            self.fade.old.close()
+            self.current = self.fade.new
+        self.fade = Crossfade(self.current, self._make(name), self.fade_seconds)
         self.time_on_screen = 0.0
 
     def _make(self, name: str) -> Visual:

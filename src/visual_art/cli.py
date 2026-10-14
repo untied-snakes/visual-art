@@ -1,4 +1,4 @@
-"""Command line: visual-art list | devices | displays | play | shuffle | render"""
+"""Command line: visual-art list | devices | displays | play | shuffle | set | render"""
 import argparse
 import os
 from pathlib import Path
@@ -8,10 +8,12 @@ os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")  # before pygame is imp
 import pygame
 import sounddevice as sd
 
+from visual_art import media
 from visual_art.audio import AudioInput
 from visual_art.player import Player
 from visual_art.registry import find_visuals
 from visual_art.render import render
+from visual_art.setlist import Setlist, read_setlist
 from visual_art.show import Show
 
 def main() -> None:
@@ -30,6 +32,12 @@ def main() -> None:
     add_shuffle_options(shuffle)
     add_live_options(shuffle)
 
+    set_cmd = commands.add_parser("set", help="one visual per song, in setlist order; you press next")
+    set_cmd.add_argument("setlist", type=Path, nargs="?", default=Path("setlist.txt"),
+                         help="setlist file (default: setlist.txt)")
+    set_cmd.add_argument("--fade", type=float, default=3, help="crossfade length in seconds")
+    add_live_options(set_cmd)
+
     render_cmd = commands.add_parser("render", help="render an audio file to MP4")
     render_cmd.add_argument("audio", type=Path)
     render_cmd.add_argument("--out", type=Path, help="output file (default: renders/<song>.mp4)")
@@ -46,8 +54,12 @@ def main() -> None:
     visuals = find_visuals()
 
     if args.command == "list":
-        for name in visuals:
-            print(name)
+        for name, visual in visuals.items():
+            if visual.media_use is None:
+                print(name)
+            else:
+                count = len(media.files_for(name))
+                print(f"{name:10s}  media/{name}/ ({count} file{'' if count == 1 else 's'}): {visual.media_use}")
 
     elif args.command == "devices":
         print(sd.query_devices())
@@ -57,13 +69,23 @@ def main() -> None:
         for i, (width, height) in enumerate(pygame.display.get_desktop_sizes()):
             print(f"{i}  {width}x{height}" + ("  (main)" if i == 0 else ""))
 
-    elif args.command in ("play", "shuffle"):
+    elif args.command in ("play", "shuffle", "set"):
         pygame.init()
         check_display(args.display, parser)
         width, height = parse_size(args.size, parser)
         if args.command == "play":
             check_name(args.name, visuals, parser)
             show = Show(visuals, width, height, names=[args.name])
+        elif args.command == "set":
+            if not args.setlist.exists():
+                parser.error(f"no setlist file at {args.setlist}")
+            songs = read_setlist(args.setlist)
+            if not songs:
+                parser.error(f"{args.setlist} has no songs in it")
+            for name, _ in songs:
+                check_name(name, visuals, parser)
+            setlist = Setlist(songs)
+            show = Show(visuals, width, height, names=setlist.names, fade=args.fade, setlist=setlist)
         else:
             show = Show(visuals, width, height, names=list(visuals), seconds=args.seconds, fade=args.fade)
         audio = AudioInput(parse_device(args.device), args.gain)
@@ -79,6 +101,7 @@ def main() -> None:
                         seconds=args.seconds, fade=args.fade, seed=args.seed)
         out = args.out or Path("renders") / f"{args.audio.stem}.mp4"
         pygame.init()
+        media.realtime = False  # wait for every picture and video frame, so the video is exact
         render(args.audio, out, show, width, height, args.fps, include_audio=not args.silent)
         print(f"  wrote {out}")
 

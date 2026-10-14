@@ -21,6 +21,10 @@ visual-art/
     ├── visual.py            # Visual: the base class every visual extends
     ├── registry.py          # finds every visual in visuals/
     ├── shuffle.py           # Shuffle: picks which visual comes next
+    ├── setlist.py           # Setlist: one visual per song, in order, moves only when told
+    ├── terminal.py          # TerminalInput: reads next/back/number typed in the terminal
+    ├── palette.py           # the show's colours and a few colour helpers
+    ├── media.py             # Media: pictures/videos from media/<visual>/, loaded on background threads
     ├── crossfade.py         # Crossfade: blends one visual into the next
     ├── show.py              # Show: current visual + shuffle + crossfade, no window
     ├── player.py            # Player: live window, keyboard, clock (drives a Show)
@@ -303,7 +307,8 @@ visual-art list                               # show available visuals
 visual-art devices                            # show audio inputs (find your interface / BlackHole)
 visual-art displays                           # show screens (find the projector's number)
 visual-art play bars                          # play one visual
-visual-art shuffle --seconds 45 --fade 4      # the live set mode
+visual-art shuffle --seconds 45 --fade 4      # rotate on a timer
+visual-art set setlist.txt --fade 3           # the live set mode: one visual per song, press next
 visual-art render song.wav --out show.mp4 --shuffle --seconds 45 --fade 4 --seed 1
 visual-art render song.wav --out bars.mp4 --visual bars
 ```

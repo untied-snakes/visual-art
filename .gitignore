@@ -10,3 +10,10 @@ renders/
 
 # macOS
 .DS_Store
+
+# Pictures and videos for the visuals stay on the show laptop; share them outside git.
+# Keep the folders themselves (.gitkeep) and the README that explains them.
+media/**
+!media/*/
+!media/README.md
+!media/*/.gitkeep

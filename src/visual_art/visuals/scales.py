@@ -34,10 +34,12 @@ class ScalesVisual(Visual):
         self.levels = np.zeros(self.columns)
         self.time = 0.0
         self.pattern = 0.0
-        self.media = Media("scales", (width // MOSAIC_SHRINK, height // MOSAIC_SHRINK), tint=SKIN, tint_strength=0.8)
-        # Which pixel of the small picture each scale takes its colour from.
-        self.sample_x = [min(int(x / MOSAIC_SHRINK), width // MOSAIC_SHRINK - 1) for x, _ in self.cells]
-        self.sample_y = [min(int(y / MOSAIC_SHRINK), height // MOSAIC_SHRINK - 1) for _, y in self.cells]
+        # The picture is bigger than the screen so it can pan slowly under the scales.
+        self.media = Media("scales", (width * 3 // 2 // MOSAIC_SHRINK, height * 3 // 2 // MOSAIC_SHRINK),
+                           tint=SKIN, tint_strength=0.8)
+        # Which pixel of the small picture each scale takes its colour from, before panning.
+        self.sample_x = np.array([min(int(x / MOSAIC_SHRINK), width // MOSAIC_SHRINK - 1) for x, _ in self.cells])
+        self.sample_y = np.array([min(int(y / MOSAIC_SHRINK), height // MOSAIC_SHRINK - 1) for _, y in self.cells])
 
     def update(self, audio: AudioFrame, dt: float) -> None:
         self.time += dt
@@ -55,7 +57,11 @@ class ScalesVisual(Visual):
         picture = self.media.frame()
         photo = None
         if picture is not None:
-            photo = pygame.surfarray.array3d(picture)[self.sample_x, self.sample_y].tolist()
+            spare_x = picture.get_width() - self.width // MOSAIC_SHRINK
+            spare_y = picture.get_height() - self.height // MOSAIC_SHRINK
+            pan_x = int(spare_x * (0.5 + 0.5 * math.sin(self.pattern * 0.7)))
+            pan_y = int(spare_y * (0.5 + 0.5 * math.cos(self.pattern * 0.5)))
+            photo = pygame.surfarray.array3d(picture)[self.sample_x + pan_x, self.sample_y + pan_y].tolist()
         for i, ((x, y), hexagon) in enumerate(zip(self.cells, self.hexagons)):
             column = min(int(x / step_x), self.columns - 1)
             # A slow ripple of colour runs across the skin like a lizard changing colour.

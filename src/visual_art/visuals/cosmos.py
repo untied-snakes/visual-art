@@ -36,7 +36,7 @@ class CosmosVisual(Visual):
         self.core_glow = palette.glow(int(height * 0.45), palette.OCHRE, 0.9)
         self.haze = palette.glow(int(width * 0.5), palette.DUSK, 0.6)
         # Recoloured dark, so the stars still stand out against it.
-        self.media = Media("cosmos", (int(width * 1.1), int(height * 1.1)),
+        self.media = Media("cosmos", (int(width * 1.3), int(height * 1.3)),
                            tint=[palette.NIGHT, palette.NIGHT, palette.NIGHT, palette.INDIGO, palette.DUSK], speed=0.5)
 
     def update(self, audio: AudioFrame, dt: float) -> None:
@@ -52,8 +52,9 @@ class CosmosVisual(Visual):
             surface.fill(palette.NIGHT)
         else:
             spare_x, spare_y = picture.get_width() - self.width, picture.get_height() - self.height
-            surface.blit(picture, (-spare_x * (0.5 + 0.5 * math.sin(self.time * 0.03)),
-                                   -spare_y * (0.5 + 0.5 * math.cos(self.time * 0.025))))
+            # Wander around, and drift a little further while the band is loud.
+            surface.blit(picture, (-spare_x * (0.5 + 0.5 * math.sin(self.rotation * 0.8 + self.time * 0.07)),
+                                   -spare_y * (0.5 + 0.5 * math.cos(self.rotation * 0.6 + self.time * 0.05))))
         cx, cy = self.width / 2, self.height / 2
         surface.blit(self.haze, self.haze.get_rect(center=(cx, cy)), special_flags=pygame.BLEND_ADD)
 

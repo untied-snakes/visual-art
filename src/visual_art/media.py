@@ -53,12 +53,14 @@ class Media:
         seconds_each: float = 30.0,
         fade: float = 3.0,
         speed: float = 1.0,
+        start: int = 0,
     ) -> None:
         """name: the visual's name, which is also its folder in media/.
         size: every picture is cropped to fill exactly this size.
         tint: recolour pictures along these colours (dark -> bright) so they match the show.
         tint_strength: 1 = fully recoloured, 0 = original colours.
-        speed: video playback speed; 0.5 is half speed."""
+        speed: video playback speed; 0.5 is half speed.
+        start: which file to begin with, so several Medias in one visual can show different files."""
         self.files = files_for(name)
         self.size = size
         self.tint = tint
@@ -66,8 +68,8 @@ class Media:
         self.seconds_each = seconds_each
         self.fade_seconds = fade
         self.speed = speed
-        self.index = 0
-        self.source = self._open(0) if self.files else None
+        self.index = start % len(self.files) if self.files else 0
+        self.source = self._open(self.index) if self.files else None
         self.previous = None  # the file fading out, while a new one fades in
         self.progress = 0.0
         self.time_on = 0.0

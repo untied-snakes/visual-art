@@ -1,6 +1,8 @@
 """Looking up a slot canyon: curved bands of sandstone that slowly flow and bend.
 The mids bend the rock more; the bass brightens the light falling from above.
 Pictures in media/canyon/ are pressed into the rock as texture."""
+import math
+
 import numpy as np
 import pygame
 
@@ -25,7 +27,7 @@ class CanyonVisual(Visual):
         self.sunbeam = palette.glow(int(height * 0.7), palette.SAND, 0.7)
         # Multiplied over the bands, so it only darkens: dark parts of the picture
         # become grooves in the rock, bright parts leave the rock as it is.
-        self.media = Media("canyon", (width, height), tint=[(110, 80, 80), palette.SAND, palette.BONE, (255, 255, 255)],
+        self.media = Media("canyon", (int(width * 1.25), int(height * 1.25)), tint=[(110, 80, 80), palette.SAND, palette.BONE, (255, 255, 255)],
                            speed=0.5)
 
     def update(self, audio: AudioFrame, dt: float) -> None:
@@ -50,7 +52,11 @@ class CanyonVisual(Visual):
 
         picture = self.media.frame()
         if picture is not None:
-            surface.blit(picture, (0, 0), special_flags=pygame.BLEND_MULT)
+            # The texture slides around with the flow of the rock.
+            spare_x, spare_y = picture.get_width() - self.width, picture.get_height() - self.height
+            x = -spare_x * (0.5 + 0.5 * math.sin(self.time * 0.9))
+            y = -spare_y * (0.5 + 0.5 * math.cos(self.time * 0.7))
+            surface.blit(picture, (x, y), special_flags=pygame.BLEND_MULT)
 
         beam = palette.dimmed(self.sunbeam, 0.2 + 0.8 * self.light)
         surface.blit(beam, beam.get_rect(center=(self.width // 2, 0)), special_flags=pygame.BLEND_ADD)
